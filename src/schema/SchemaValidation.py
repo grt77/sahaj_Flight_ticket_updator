@@ -5,6 +5,7 @@ class SchemaValidation:
         self.file_schema_columns=schemaColumns
         self.env_var=load_env_variables()
         self.expected_schema=set(eval(self.env_var['VALID_SCHEMA_COLUMNS']))
+        print(schemaColumns)
 
     def is_schemaColumns_valid(self):
         if len(self.expected_schema-self.file_schema_columns)==0:
