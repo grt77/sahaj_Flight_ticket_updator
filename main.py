@@ -9,6 +9,27 @@ from src.schema.SchemaValidation import SchemaValidation
 import sys
 
 
+def run_pipeline():
+    file_path_dict = get_input_output_file_details()
+    input_file_manager_obj = FileManager(file_path_dict['input_file_path'])
+    if not (SchemaValidation(set(input_file_manager_obj.headers)).is_schemaColumns_valid()):
+        sys.exit("Schema is not valid, please check with file")
+    error_file_manager = ErrorFileManager(file_path_dict['input_file_path'], file_path_dict['output_error_file_path'])
+    success_file_manager = SucessFileManager(file_path_dict['input_file_path'],
+                                             file_path_dict['output_success_file_path'])
+    passenger_validator_obj = PassengerValidator()
+    discount_coup_obj = DiscountCoupon()
+    for each_row_dict in input_file_manager_obj.read_data_dict_row_wise():
+        passenger_obj = Passenger(each_row_dict)
+        error_columns = passenger_validator_obj.validator(passenger_obj)
+        if error_columns is not None:
+            each_row_dict['Error'] = error_columns + " Invalid"
+            error_file_manager.write_data_dict(each_row_dict)
+        else:
+            each_row_dict['Discount_code'] = discount_coup_obj.get_discount_code_FareClass(passenger_obj)
+            success_file_manager.write_data_dict(each_row_dict)
+
+
 def get_input_output_file_details():
     env_var = load_env_variables()
     file_format_date_obj = DateOperations(env_var['FILE_DATE_FORMAT'])
@@ -32,25 +53,5 @@ def get_input_output_file_details():
     }
 
 
-def run_pipeline():
-    file_path_dict = get_input_output_file_details()
-    input_file_manager_obj = FileManager(file_path_dict['input_file_path'])
-    if not (SchemaValidation(set(input_file_manager_obj.headers)).is_schemaColumns_valid()):
-        sys.exit("Schema is not valid, please check with file")
-    error_file_manager = ErrorFileManager(file_path_dict['input_file_path'], file_path_dict['output_error_file_path'])
-    success_file_manager = SucessFileManager(file_path_dict['input_file_path'],
-                                             file_path_dict['output_success_file_path'])
-    passenger_validator_obj = PassengerValidator()
-    discount_coup_obj = DiscountCoupon()
-    for each_row_dict in input_file_manager_obj.read_data_dict_row_wise():
-        passenger_obj = Passenger(each_row_dict)
-        error_columns = passenger_validator_obj.validator(passenger_obj)
-        if error_columns is not None:
-            each_row_dict['Error'] = error_columns + " Invalid"
-            error_file_manager.write_data_dict(each_row_dict)
-        else:
-            each_row_dict['Discount_code'] = discount_coup_obj.get_discount_code_FareClass(passenger_obj)
-            success_file_manager.write_data_dict(each_row_dict)
-
-
-run_pipeline()
+if __name__=="__main__":
+    run_pipeline()
